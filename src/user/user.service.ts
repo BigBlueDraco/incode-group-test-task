@@ -1,26 +1,80 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from 'src/prisma/service/prisma.service';
+import { User } from '@prisma/client';
+import { CreateUser } from './interfaces/create-user.interface';
+import { UpdateUser } from './interfaces/update-user.interface';
+import { ResponseUser } from './interfaces/response-user.interface';
 
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(private readonly prismaService: PrismaService) {}
+  async create(createUser: CreateUser): Promise<ResponseUser> {
+    try {
+      const exUser = await this.prismaService.user.findUnique({
+        where: { email: createUser.email.toLocaleLowerCase() },
+      });
+      if (exUser) {
+        throw new ConflictException(
+          `User with email ${createUser.email.toLocaleLowerCase()} already exist`,
+        );
+      }
+      const user = await this.prismaService.user.create({ data: createUser });
+      return user;
+    } catch (err) {
+      throw err;
+    }
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findAll(): Promise<ResponseUser[]> {
+    try {
+      return await this.prismaService.user.findMany({
+        include: { subordinates: true, boss: true },
+      });
+    } catch (err) {
+      throw err;
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number): Promise<ResponseUser> {
+    try {
+      const user = await this.prismaService.user.findUnique({
+        where: { id },
+        include: { subordinates: true, boss: true },
+      });
+      if (!user) {
+        throw new NotFoundException();
+      }
+      return user;
+    } catch (err) {
+      throw err;
+    }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUser: UpdateUser): Promise<ResponseUser> {
+    try {
+      await this.findOne(id);
+      return await this.prismaService.user.update({
+        where: { id },
+        data: updateUser,
+        include: { subordinates: true, boss: true },
+      });
+    } catch (err) {
+      throw err;
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: number): Promise<ResponseUser> {
+    try {
+      await this.findOne(id);
+      return await this.prismaService.user.delete({
+        where: { id },
+      });
+    } catch (err) {
+      throw err;
+    }
   }
 }

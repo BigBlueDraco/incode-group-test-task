@@ -27,5 +27,6 @@ module.exports = {
         endOfLine: 'auto',
       },
     ],
+    rules: { 'no-empty-interface': false },
   },
 };
