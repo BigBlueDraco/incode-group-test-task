@@ -8,6 +8,8 @@ import {
   Delete,
   HttpCode,
   NotFoundException,
+  UseGuards,
+  Inject,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,6 +21,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ResponseUserDto } from './dto/response-user.dto';
+import { RoleGuard } from 'src/auth/guards/role.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { $Enums } from '@prisma/client';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
 
 @Controller('user')
 @ApiTags('user')
@@ -32,6 +40,8 @@ export class UserController {
     status: 200,
     type: [ResponseUserDto],
   })
+  @Roles($Enums.Role.ADMIN)
+  @UseGuards(RoleGuard)
   async findAll(): Promise<ResponseUserDto[]> {
     try {
       return await this.userService.findAll();
