@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/service/prisma.service';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { CreateUser } from './interfaces/create-user.interface';
 import { UpdateUser } from './interfaces/update-user.interface';
 import { ResponseUser } from './interfaces/response-user.interface';
@@ -38,11 +38,10 @@ export class UserService {
       throw err;
     }
   }
-
-  async findOne(id: number): Promise<ResponseUser> {
+  async findOne(where: Prisma.UserWhereUniqueInput): Promise<ResponseUser> {
     try {
       const user = await this.prismaService.user.findUnique({
-        where: { id },
+        where,
         include: { subordinates: true, boss: true },
       });
       if (!user) {
@@ -56,7 +55,7 @@ export class UserService {
 
   async update(id: number, updateUser: UpdateUser): Promise<ResponseUser> {
     try {
-      await this.findOne(id);
+      await this.findOne({ id });
       return await this.prismaService.user.update({
         where: { id },
         data: updateUser,
@@ -69,7 +68,7 @@ export class UserService {
 
   async remove(id: number): Promise<ResponseUser> {
     try {
-      await this.findOne(id);
+      await this.findOne({ id });
       return await this.prismaService.user.delete({
         where: { id },
       });

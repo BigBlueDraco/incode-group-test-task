@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   HttpCode,
+  NotFoundException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -46,9 +47,9 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiNotFoundResponse({ description: 'User not found' })
-  async findOne(@Param('id') id: string): Promise<ResponseUserDto> {
+  async findOne(@Param('id') id: number): Promise<ResponseUserDto> {
     try {
-      return await this.userService.findOne(+id);
+      return await this.userService.findOne({ id: +id });
     } catch (err) {
       return err;
     }
@@ -64,6 +65,10 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<ResponseUserDto> {
     try {
+      const user = await this.userService.findOne({ id: +id });
+      if (!user) {
+        throw new NotFoundException();
+      }
       return await this.userService.update(+id, updateUserDto);
     } catch (err) {
       return err;

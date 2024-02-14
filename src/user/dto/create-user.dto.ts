@@ -2,7 +2,6 @@ import { Role } from '@prisma/client';
 import { CreateUser } from '../interfaces/create-user.interface';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
-// enum Role
 export class CreateUserDto implements CreateUser {
   @ApiProperty({
     description: 'email',
@@ -32,5 +31,6 @@ export class CreateUserDto implements CreateUser {
     type: [Role.ADMIN, Role.BOSS, Role.USER],
   })
   @IsEnum(Role)
+  @IsOptional()
   role: Role;
 }
