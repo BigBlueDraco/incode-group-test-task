@@ -49,7 +49,7 @@ export class UserService {
         include,
       });
       if (!user) {
-        throw new NotFoundException();
+        throw new NotFoundException(`User not found`);
       }
       return user;
     } catch (err) {

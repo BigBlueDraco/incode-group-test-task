@@ -9,7 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -18,14 +22,15 @@ import { AuthUser } from 'src/auth/decorators/auth-user.decorator';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { RoleGuard } from 'src/auth/guards/role.guard';
+import { ChangeBossDto } from './dto/change-boss.dto';
+import { changeRoleDto } from './dto/change-role.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
-import { ChangeBossDto } from './dto/change-boss.dto';
-import { changeRoleDto } from './dto/change-role.dto';
 
 @Controller('user')
 @ApiTags('user')
+@ApiBearerAuth('JWT')
 @ApiInternalServerErrorResponse({ description: 'Oh, something went wrong' })
 @UseGuards(JwtAuthGuard, RoleGuard)
 export class UserController {
@@ -48,23 +53,14 @@ export class UserController {
     }
   }
 
-  @Get('/myself/subordinates')
-  @HttpCode(200)
-  @ApiResponse({
-    status: 200,
-    type: [ResponseUserDto],
-  })
-  @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS)
-  async findSubordinates(@AuthUser() user: any) {
-    return await this.userService.findSubordinates(user.id);
-  }
-
   @Get('/myself')
   @HttpCode(200)
   @ApiResponse({
     status: 200,
     type: [ResponseUserDto],
+    description: 'Return user base on JWT token',
   })
+  @ApiNotFoundResponse({ description: 'User not found' })
   @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS, $Enums.Role.USER)
   async findMyself(@AuthUser() user: any) {
     const { password, ...res } = await this.userService.findOne({
@@ -73,10 +69,28 @@ export class UserController {
     return res;
   }
 
+  @Get('/myself/subordinates')
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    type: [ResponseUserDto],
+    description: 'Return user and his subordinates base on JWT token',
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS)
+  async findSubordinates(@AuthUser() user: any) {
+    return await this.userService.findSubordinates(user.id);
+  }
+
   @Patch(':id')
   @ApiResponse({
     status: 200,
     type: ResponseUserDto,
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiBadRequestResponse({ description: "User id and boss id can't be equels" })
+  @ApiConflictResponse({
+    description: 'Admin can be subordinate only by admin',
   })
   @Roles($Enums.Role.ADMIN)
   async update(
@@ -100,11 +114,29 @@ export class UserController {
 
   @Patch(':id/role')
   @Roles($Enums.Role.ADMIN)
+  @ApiResponse({
+    status: 200,
+    type: ResponseUserDto,
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiConflictResponse({
+    description:
+      "You can't set role USER because User with id ${id} have subordinates",
+  })
   async changeRole(@Param('id') id: string, @Body() body: changeRoleDto) {
     return await this.userService.changeRole(+id, body.role);
   }
 
   @Patch(':id/boss')
+  @ApiResponse({
+    status: 200,
+    type: ResponseUserDto,
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiBadRequestResponse({ description: "User id and boss id can't be equels" })
+  @ApiConflictResponse({
+    description: 'Admin can be subordinate only by admin',
+  })
   @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS)
   async changeBoss(
     @Param('id') id: string,

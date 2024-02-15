@@ -10,7 +10,9 @@ async function bootstrap() {
     .setTitle('Incode-group')
     .setDescription('Test task')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
+
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
   app.useGlobalPipes(new ValidationPipe());
