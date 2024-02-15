@@ -1,41 +1,32 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   NotFoundException,
   Param,
   Patch,
-  Req,
   UseGuards,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import {
   ApiInternalServerErrorResponse,
-  ApiNotFoundResponse,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { $Enums } from '@prisma/client';
+import { AuthUser } from 'src/auth/decorators/auth-user.decorator';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { RoleGuard } from 'src/auth/guards/role.guard';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
-import { AuthUser } from 'src/auth/decorators/auth-user.decorator';
 
 @Controller('user')
 @ApiTags('user')
 @ApiInternalServerErrorResponse({ description: 'Oh, something went wrong' })
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @Get()
   @HttpCode(200)
@@ -62,7 +53,9 @@ export class UserController {
     type: [ResponseUserDto],
   })
   @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS)
-  async findSubordinates(@AuthUser() user: any) {}
+  async findSubordinates(@AuthUser() user: any) {
+    return await this.userService.findSubordinates(user.id);
+  }
 
   @Get('/myself')
   @HttpCode(200)
@@ -84,8 +77,8 @@ export class UserController {
     status: 200,
     type: ResponseUserDto,
   })
-  @Roles($Enums.Role.ADMIN)
-  @UseGuards(JwtAuthGuard, RoleGuard)
+  // @Roles($Enums.Role.ADMIN)
+  // @UseGuards(JwtAuthGuard, RoleGuard)
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -95,7 +88,11 @@ export class UserController {
       if (!user) {
         throw new NotFoundException();
       }
-      return await this.userService.update(+id, updateUserDto);
+      const { password, ...res } = await this.userService.update(
+        +id,
+        updateUserDto,
+      );
+      return res;
     } catch (err) {
       return err;
     }

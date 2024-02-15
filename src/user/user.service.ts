@@ -29,10 +29,10 @@ export class UserService {
     }
   }
 
-  async findAll(): Promise<ResponseUser[]> {
+  async findAll(include?: unknown): Promise<ResponseUser[]> {
     try {
       return await this.prismaService.user.findMany({
-        include: { subordinates: true, boss: true },
+        include,
       });
     } catch (err) {
       throw err;
@@ -78,5 +78,20 @@ export class UserService {
     } catch (err) {
       throw err;
     }
+  }
+
+  async findSubordinates(id: number) {
+    return await this.prismaService.$queryRaw`
+    WITH RECURSIVE Subordinates AS (
+      SELECT id, email, "bossId", "role"
+      FROM "User"
+      WHERE id = ${id}
+      UNION ALL
+      SELECT u.id, u.email, u."bossId", u."role"
+      FROM "User" u
+      INNER JOIN Subordinates s ON u."bossId" = s.id
+    )
+    SELECT id, email, "bossId", "role"
+    FROM Subordinates;`;
   }
 }
