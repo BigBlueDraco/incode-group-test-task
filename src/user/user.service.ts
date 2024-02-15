@@ -97,4 +97,7 @@ export class UserService {
   async changeRole(id: number, role: $Enums.Role) {
     return await this.update(id, { role });
   }
+  async changeBoss(id: number, bossId: number) {
+    return await this.update(id, { bossId });
+  }
 }

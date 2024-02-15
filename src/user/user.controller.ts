@@ -25,6 +25,7 @@ import { UserService } from './user.service';
 @Controller('user')
 @ApiTags('user')
 @ApiInternalServerErrorResponse({ description: 'Oh, something went wrong' })
+@UseGuards(JwtAuthGuard, RoleGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -35,7 +36,6 @@ export class UserController {
     type: [ResponseUserDto],
   })
   @Roles($Enums.Role.ADMIN)
-  @UseGuards(JwtAuthGuard, RoleGuard)
   async findAll(): Promise<ResponseUserDto[]> {
     try {
       return (await this.userService.findAll()).map(
@@ -64,29 +64,19 @@ export class UserController {
     type: [ResponseUserDto],
   })
   @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS, $Enums.Role.USER)
-  @UseGuards(JwtAuthGuard, RoleGuard)
   async findMyself(@AuthUser() user: any) {
     const { password, ...res } = await this.userService.findOne({
       id: +user.id,
     });
     return res;
   }
-  @Patch(':id/role')
-  @Roles($Enums.Role.ADMIN)
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  async changeRole(
-    @Param('id') id: string,
-    @Body() body: { role: $Enums.Role },
-  ) {
-    return await this.userService.changeRole(+id, body.role);
-  }
+
   @Patch(':id')
   @ApiResponse({
     status: 200,
     type: ResponseUserDto,
   })
   @Roles($Enums.Role.ADMIN)
-  @UseGuards(JwtAuthGuard, RoleGuard)
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -104,5 +94,20 @@ export class UserController {
     } catch (err) {
       return err;
     }
+  }
+
+  @Patch(':id/role')
+  @Roles($Enums.Role.ADMIN)
+  async changeRole(
+    @Param('id') id: string,
+    @Body() body: { role: $Enums.Role },
+  ) {
+    return await this.userService.changeRole(+id, body.role);
+  }
+
+  @Patch(':id/boss')
+  @Roles($Enums.Role.BOSS)
+  async changeBoss(@Param('id') id: string, @Body() body: { bossId: number }) {
+    return await this.userService.changeBoss(+id, body.bossId);
   }
 }
