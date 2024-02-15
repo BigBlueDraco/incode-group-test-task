@@ -27,4 +27,9 @@ export class ResponseUserDto implements ResponseUser {
     example: 'mail@example.com',
   })
   email: string;
+  @ApiProperty({
+    description: 'Boss',
+    type: ResponseUserDto,
+  })
+  boss?: ResponseUserDto;
 }

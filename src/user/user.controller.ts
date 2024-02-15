@@ -21,6 +21,8 @@ import { RoleGuard } from 'src/auth/guards/role.guard';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
+import { ChangeBossDto } from './dto/change-boss.dto';
+import { changeRoleDto } from './dto/change-role.dto';
 
 @Controller('user')
 @ApiTags('user')
@@ -98,20 +100,17 @@ export class UserController {
 
   @Patch(':id/role')
   @Roles($Enums.Role.ADMIN)
-  async changeRole(
-    @Param('id') id: string,
-    @Body() body: { role: $Enums.Role },
-  ) {
+  async changeRole(@Param('id') id: string, @Body() body: changeRoleDto) {
     return await this.userService.changeRole(+id, body.role);
   }
 
   @Patch(':id/boss')
-  @Roles($Enums.Role.BOSS)
+  @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS)
   async changeBoss(
     @Param('id') id: string,
-    @Body() body: { bossId: number },
+    @Body() body: ChangeBossDto,
     @AuthUser() user,
   ): Promise<ResponseUserDto> {
-    return await this.userService.changeBoss(+id, body.bossId, user.id);
+    return await this.userService.changeBoss(+id, body.bossId, +user.id);
   }
 }

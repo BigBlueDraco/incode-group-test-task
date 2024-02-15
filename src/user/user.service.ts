@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -55,26 +56,58 @@ export class UserService {
       throw err;
     }
   }
+  async checkUserCanBeBossOfUser(id: number, bossId: number) {
+    if (
+      (await this.findSubordinates(id)).filter((elem) => elem.id == bossId)
+        .length > 0
+    ) {
+      throw new BadRequestException(
+        'A user cannot be the boss of this user because he is already his subordinate',
+      );
+    }
+  }
   async update(id: number, updateUser: UpdateUser): Promise<ResponseUser> {
     try {
-      await this.findOne({ id });
-      if (Object.keys(updateUser).includes('bossId')) {
+      const exUser = await this.findOne({ id });
+      if (
+        Object.keys(updateUser).includes('bossId') &&
+        updateUser.bossId != null
+      ) {
+        if (id == updateUser.bossId) {
+          throw new BadRequestException("User id and boss id can't be equels");
+        }
+
+        await this.checkUserCanBeBossOfUser(id, updateUser.bossId);
         const boss = await this.findOne({
           id: updateUser.bossId,
         });
         const { BOSS, ADMIN } = $Enums.Role;
-        if (boss.role !== BOSS && boss.role !== ADMIN) {
-          updateUser.role = BOSS;
+        if (boss.role !== `${ADMIN}` && exUser.role == 'ADMIN') {
+          throw new ConflictException('Admin can be subordinate only by admin');
+        }
+        if (
+          boss.role != `${BOSS}` &&
+          boss.role != `${ADMIN}` &&
+          !(updateUser.role === `${ADMIN}`)
+        ) {
+          updateUser = { ...updateUser, role: BOSS };
         }
       }
-      const { password, ...user } = await this.prismaService.user.update({
+      const {
+        password,
+        boss: { password: bossPassword, ...boss },
+        ...user
+      } = await this.prismaService.user.update({
         where: { id },
         data: updateUser,
         include: { subordinates: true, boss: true },
       });
-      return user;
+      return {
+        ...user,
+        boss: boss ? boss : null,
+      };
     } catch (err) {
-      throw err;
+      return err;
     }
   }
 
@@ -113,7 +146,7 @@ export class UserService {
       const user = await this.findSubordinates(id);
       if (user.length > 1 && role == $Enums.Role.USER) {
         throw new ConflictException(
-          `You can't set role ${$Enums.Role.USER} because User with ${id} have subordinates`,
+          `You can't set role ${$Enums.Role.USER} because User with id ${id} have subordinates`,
         );
       }
       return await this.update(id, { role });
