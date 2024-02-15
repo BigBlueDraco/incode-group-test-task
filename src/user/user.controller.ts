@@ -107,7 +107,11 @@ export class UserController {
 
   @Patch(':id/boss')
   @Roles($Enums.Role.BOSS)
-  async changeBoss(@Param('id') id: string, @Body() body: { bossId: number }) {
-    return await this.userService.changeBoss(+id, body.bossId);
+  async changeBoss(
+    @Param('id') id: string,
+    @Body() body: { bossId: number },
+    @AuthUser() user,
+  ): Promise<ResponseUserDto> {
+    return await this.userService.changeBoss(+id, body.bossId, user.id);
   }
 }

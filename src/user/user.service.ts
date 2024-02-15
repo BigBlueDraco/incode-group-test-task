@@ -55,15 +55,24 @@ export class UserService {
       throw err;
     }
   }
-
   async update(id: number, updateUser: UpdateUser): Promise<ResponseUser> {
     try {
       await this.findOne({ id });
-      return await this.prismaService.user.update({
+      if (Object.keys(updateUser).includes('bossId')) {
+        const boss = await this.findOne({
+          id: updateUser.bossId,
+        });
+        const { BOSS, ADMIN } = $Enums.Role;
+        if (boss.role !== BOSS && boss.role !== ADMIN) {
+          updateUser.role = BOSS;
+        }
+      }
+      const { password, ...user } = await this.prismaService.user.update({
         where: { id },
         data: updateUser,
         include: { subordinates: true, boss: true },
       });
+      return user;
     } catch (err) {
       throw err;
     }
@@ -80,24 +89,49 @@ export class UserService {
     }
   }
 
-  async findSubordinates(id: number) {
-    return await this.prismaService.$queryRaw`
-    WITH RECURSIVE Subordinates AS (
+  async findSubordinates(id: number): Promise<ResponseUser[]> {
+    try {
+      await this.findOne({ id });
+      return await this.prismaService.$queryRaw`
+      WITH RECURSIVE Subordinates AS (
+        SELECT id, email, "bossId", "role"
+        FROM "User"
+        WHERE id = ${id}
+        UNION ALL
+        SELECT u.id, u.email, u."bossId", u."role"
+        FROM "User" u
+        INNER JOIN Subordinates s ON u."bossId" = s.id
+      )
       SELECT id, email, "bossId", "role"
-      FROM "User"
-      WHERE id = ${id}
-      UNION ALL
-      SELECT u.id, u.email, u."bossId", u."role"
-      FROM "User" u
-      INNER JOIN Subordinates s ON u."bossId" = s.id
-    )
-    SELECT id, email, "bossId", "role"
-    FROM Subordinates;`;
+      FROM Subordinates;`;
+    } catch (err) {
+      throw err;
+    }
   }
   async changeRole(id: number, role: $Enums.Role) {
-    return await this.update(id, { role });
+    try {
+      const user = await this.findSubordinates(id);
+      if (user.length > 1 && role == $Enums.Role.USER) {
+        throw new ConflictException(
+          `You can't set role ${$Enums.Role.USER} because User with ${id} have subordinates`,
+        );
+      }
+      return await this.update(id, { role });
+    } catch (err) {
+      return err;
+    }
   }
-  async changeBoss(id: number, bossId: number) {
-    return await this.update(id, { bossId });
+  async changeBoss(id: number, bossId: number, currentBossId: number) {
+    try {
+      const subordinates = await this.findSubordinates(currentBossId);
+      if (subordinates.filter((elem) => elem.id === id).length < 0) {
+        throw new NotFoundException(
+          `User with id: ${id} not found in your subordinates`,
+        );
+      }
+      return await this.update(id, { bossId });
+    } catch (err) {
+      return err;
+    }
   }
 }
