@@ -41,7 +41,14 @@ export class AuthService {
         password: hashedPassword,
       });
       const { password: newPassword, ...resUser } = newUser;
-      return resUser;
+      return {
+        accessToken: this.jwtService.sign({
+          id: resUser.id,
+          email: resUser.email,
+          role: resUser.role,
+        }),
+        resUser,
+      };
     } catch (err) {
       return err;
     }

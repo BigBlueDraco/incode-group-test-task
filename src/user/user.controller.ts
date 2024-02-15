@@ -1,38 +1,41 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
   HttpCode,
   NotFoundException,
+  Param,
+  Patch,
+  Req,
   UseGuards,
-  Inject,
 } from '@nestjs/common';
-import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import {
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ResponseUserDto } from './dto/response-user.dto';
-import { RoleGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
 import { $Enums } from '@prisma/client';
-import { AuthGuard } from '@nestjs/passport';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
-import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
+import { RoleGuard } from 'src/auth/guards/role.guard';
+import { ResponseUserDto } from './dto/response-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserService } from './user.service';
+import { AuthUser } from 'src/auth/decorators/auth-user.decorator';
 
 @Controller('user')
 @ApiTags('user')
 @ApiInternalServerErrorResponse({ description: 'Oh, something went wrong' })
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {}
 
   @Get()
   @HttpCode(200)
@@ -41,28 +44,39 @@ export class UserController {
     type: [ResponseUserDto],
   })
   @Roles($Enums.Role.ADMIN)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAuthGuard, RoleGuard)
   async findAll(): Promise<ResponseUserDto[]> {
     try {
-      return await this.userService.findAll();
+      return (await this.userService.findAll()).map(
+        ({ password, ...elem }) => ({ ...elem }),
+      );
     } catch (err) {
       return err;
     }
   }
 
-  @Get(':id')
+  @Get('/myself/subordinates')
   @HttpCode(200)
   @ApiResponse({
     status: 200,
-    type: ResponseUserDto,
+    type: [ResponseUserDto],
   })
-  @ApiNotFoundResponse({ description: 'User not found' })
-  async findOne(@Param('id') id: number): Promise<ResponseUserDto> {
-    try {
-      return await this.userService.findOne({ id: +id });
-    } catch (err) {
-      return err;
-    }
+  @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS)
+  async findSubordinates(@AuthUser() user: any) {}
+
+  @Get('/myself')
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    type: [ResponseUserDto],
+  })
+  @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS, $Enums.Role.USER)
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  async findMyself(@AuthUser() user: any) {
+    const { password, ...res } = await this.userService.findOne({
+      id: +user.id,
+    });
+    return res;
   }
 
   @Patch(':id')
@@ -70,6 +84,8 @@ export class UserController {
     status: 200,
     type: ResponseUserDto,
   })
+  @Roles($Enums.Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RoleGuard)
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -80,19 +96,6 @@ export class UserController {
         throw new NotFoundException();
       }
       return await this.userService.update(+id, updateUserDto);
-    } catch (err) {
-      return err;
-    }
-  }
-
-  @Delete(':id')
-  @ApiResponse({
-    status: 200,
-    type: ResponseUserDto,
-  })
-  remove(@Param('id') id: string) {
-    try {
-      return this.userService.remove(+id);
     } catch (err) {
       return err;
     }

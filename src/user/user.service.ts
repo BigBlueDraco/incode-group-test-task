@@ -38,11 +38,14 @@ export class UserService {
       throw err;
     }
   }
-  async findOne(where: Prisma.UserWhereUniqueInput): Promise<ResponseUser> {
+  async findOne(
+    where: Prisma.UserWhereUniqueInput,
+    include?: unknown,
+  ): Promise<ResponseUser> {
     try {
       const user = await this.prismaService.user.findUnique({
         where,
-        include: { subordinates: true, boss: true },
+        include,
       });
       if (!user) {
         throw new NotFoundException();
