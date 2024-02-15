@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/service/prisma.service';
-import { Prisma, User } from '@prisma/client';
+import { $Enums, Prisma, User } from '@prisma/client';
 import { CreateUser } from './interfaces/create-user.interface';
 import { UpdateUser } from './interfaces/update-user.interface';
 import { ResponseUser } from './interfaces/response-user.interface';
@@ -93,5 +93,8 @@ export class UserService {
     )
     SELECT id, email, "bossId", "role"
     FROM Subordinates;`;
+  }
+  async changeRole(id: number, role: $Enums.Role) {
+    return await this.update(id, { role });
   }
 }

@@ -71,14 +71,22 @@ export class UserController {
     });
     return res;
   }
-
+  @Patch(':id/role')
+  @Roles($Enums.Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  async changeRole(
+    @Param('id') id: string,
+    @Body() body: { role: $Enums.Role },
+  ) {
+    return await this.userService.changeRole(+id, body.role);
+  }
   @Patch(':id')
   @ApiResponse({
     status: 200,
     type: ResponseUserDto,
   })
-  // @Roles($Enums.Role.ADMIN)
-  // @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles($Enums.Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RoleGuard)
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
