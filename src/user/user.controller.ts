@@ -16,6 +16,7 @@ import {
   ApiNotFoundResponse,
   ApiResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { $Enums } from '@prisma/client';
 import { AuthUser } from 'src/auth/decorators/auth-user.decorator';
@@ -31,6 +32,7 @@ import { UserService } from './user.service';
 @Controller('user')
 @ApiTags('user')
 @ApiBearerAuth('JWT')
+@ApiUnauthorizedResponse()
 @ApiInternalServerErrorResponse({ description: 'Oh, something went wrong' })
 @UseGuards(JwtAuthGuard, RoleGuard)
 export class UserController {
