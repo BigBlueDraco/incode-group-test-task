@@ -5,6 +5,7 @@ To get started with our application, follow these simple steps:
 1. **Environment Setup**:
 
    - Begin by duplicating the provided `example.env` file and rename it to `.env`.
+     -PostgreSQL used as Database. Start it local and config url in `.env`
    - Ensure to fill in all the necessary fields within the `.env` file.
    - The `CORS` variable should contain a string of URLs separated by spaces.
 
