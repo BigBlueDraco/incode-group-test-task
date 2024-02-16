@@ -68,6 +68,7 @@ export class UserService {
   }
   async update(id: number, updateUser: UpdateUser): Promise<ResponseUser> {
     try {
+      const { BOSS, ADMIN } = $Enums.Role;
       const exUser = await this.findOne({ id });
       if (
         Object.keys(updateUser).includes('bossId') &&
@@ -81,31 +82,24 @@ export class UserService {
         const boss = await this.findOne({
           id: updateUser.bossId,
         });
-        const { BOSS, ADMIN } = $Enums.Role;
         if (boss.role !== `${ADMIN}` && exUser.role == 'ADMIN') {
           throw new ConflictException('Admin can be subordinate only by admin');
         }
-        if (
-          boss.role != `${BOSS}` &&
-          boss.role != `${ADMIN}` &&
-          !(updateUser.role === `${ADMIN}`)
-        ) {
-          updateUser = { ...updateUser, role: BOSS };
-        }
       }
-      const {
-        password,
-        boss: { password: bossPassword, ...boss },
-        ...user
-      } = await this.prismaService.user.update({
+      const { password, ...user } = await this.prismaService.user.update({
         where: { id },
         data: updateUser,
-        include: { subordinates: true, boss: true },
+        include: { boss: true },
       });
-      return {
-        ...user,
-        boss: boss ? boss : null,
-      };
+      if (
+        user.boss.role != `${BOSS}` &&
+        user.boss.role != `${ADMIN}` &&
+        !(updateUser.role === `${ADMIN}`)
+      ) {
+        await this.changeRole(user.boss.id, 'BOSS');
+      }
+      const { boss, ...res } = user;
+      return res;
     } catch (err) {
       return err;
     }

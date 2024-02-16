@@ -15,7 +15,7 @@ model User {
   email        String @unique
   password     String
   bossId       Int?
-  boss         User?  @relation("BossSubordinates", fields: [bossId], references: [id])
+  boss         User?  @relation("BossSubordinates", fields: [bossId], references: [id], onDelete: Cascade)
   subordinates User[] @relation("BossSubordinates")
   role         Role   @default(USER)
 }

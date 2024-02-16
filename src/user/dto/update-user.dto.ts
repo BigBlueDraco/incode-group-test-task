@@ -1,7 +1,7 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateUserDto } from './create-user.dto';
 import { UpdateUser } from '../interfaces/update-user.interface';
-import { IsEnum, IsNumber, IsOptional } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, NotEquals } from 'class-validator';
 import { $Enums, Role } from '@prisma/client';
 
 export class UpdateUserDto
@@ -15,7 +15,7 @@ export class UpdateUserDto
     required: false,
   })
   @IsNumber()
-  @IsOptional()
+  @NotEquals(null)
   bossId?: number;
   @ApiProperty({
     description: 'User role',

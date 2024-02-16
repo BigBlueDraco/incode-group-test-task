@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -145,6 +146,13 @@ export class UserController {
     @Body() body: ChangeBossDto,
     @AuthUser() user,
   ): Promise<ResponseUserDto> {
-    return await this.userService.changeBoss(+id, body.bossId, +user.id);
+    try {
+      // if (body.bossId === null) {
+      //   throw new BadRequestException();
+      // }
+      return await this.userService.changeBoss(+id, body.bossId, +user.id);
+    } catch (err) {
+      return err;
+    }
   }
 }
