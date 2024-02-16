@@ -4,11 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { $Enums, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/service/prisma.service';
-import { $Enums, Prisma, User } from '@prisma/client';
 import { CreateUser } from './interfaces/create-user.interface';
-import { UpdateUser } from './interfaces/update-user.interface';
 import { ResponseUser } from './interfaces/response-user.interface';
+import { UpdateUser } from './interfaces/update-user.interface';
 
 @Injectable()
 export class UserService {
@@ -86,6 +86,7 @@ export class UserService {
           throw new ConflictException('Admin can be subordinate only by admin');
         }
       }
+      // eslint-disable-next-line
       const { password, ...user } = await this.prismaService.user.update({
         where: { id },
         data: updateUser,
@@ -98,6 +99,7 @@ export class UserService {
       ) {
         await this.changeRole(user.boss.id, 'BOSS');
       }
+      // eslint-disable-next-line
       const { boss, ...res } = user;
       return res;
     } catch (err) {

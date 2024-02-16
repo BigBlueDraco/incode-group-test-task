@@ -1,9 +1,9 @@
 import { ConflictException, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { compare, hash } from 'bcrypt';
+import { UserService } from 'src/user/user.service';
 import { Login } from './interfaces/login.interface';
 import { Registration } from './interfaces/registration.interface';
-import { UserService } from 'src/user/user.service';
-import { compare, hash } from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -40,6 +40,7 @@ export class AuthService {
         ...user,
         password: hashedPassword,
       });
+      // eslint-disable-next-line
       const { password: newPassword, ...resUser } = newUser;
       return {
         accessToken: this.jwtService.sign({

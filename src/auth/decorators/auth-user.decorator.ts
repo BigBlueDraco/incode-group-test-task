@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext, Inject } from '@nestjs/common';
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { env } from 'process';
 
@@ -13,6 +13,7 @@ export const AuthUser = createParamDecorator(
     const payload = jwtService.verify(token, {
       secret: secret,
     });
+    // eslint-disable-next-line
     const { iat, exp, ...user } = payload;
     return user;
   },

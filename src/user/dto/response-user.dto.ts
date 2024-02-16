@@ -1,6 +1,6 @@
-import { $Enums, Role, User } from '@prisma/client';
-import { ResponseUser } from '../interfaces/response-user.interface';
 import { ApiProperty } from '@nestjs/swagger';
+import { $Enums, Role } from '@prisma/client';
+import { ResponseUser } from '../interfaces/response-user.interface';
 export class ResponseUserDto implements ResponseUser {
   @ApiProperty({
     description: 'User id',

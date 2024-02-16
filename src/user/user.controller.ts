@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -49,6 +48,7 @@ export class UserController {
   async findAll(): Promise<ResponseUserDto[]> {
     try {
       return (await this.userService.findAll()).map(
+        // eslint-disable-next-line
         ({ password, ...elem }) => ({ ...elem }),
       );
     } catch (err) {
@@ -66,6 +66,7 @@ export class UserController {
   @ApiNotFoundResponse({ description: 'User not found' })
   @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS, $Enums.Role.USER)
   async findMyself(@AuthUser() user: any) {
+    // eslint-disable-next-line
     const { password, ...res } = await this.userService.findOne({
       id: +user.id,
     });
@@ -105,6 +106,7 @@ export class UserController {
       if (!user) {
         throw new NotFoundException();
       }
+      // eslint-disable-next-line
       const { password, ...res } = await this.userService.update(
         +id,
         updateUserDto,
@@ -147,9 +149,6 @@ export class UserController {
     @AuthUser() user,
   ): Promise<ResponseUserDto> {
     try {
-      // if (body.bossId === null) {
-      //   throw new BadRequestException();
-      // }
       return await this.userService.changeBoss(+id, body.bossId, +user.id);
     } catch (err) {
       return err;
