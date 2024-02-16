@@ -14,6 +14,7 @@ import {
   ApiConflictResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
+  ApiOperation,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -44,6 +45,7 @@ export class UserController {
     status: 200,
     type: [ResponseUserDto],
   })
+  @ApiOperation({ description: 'Return all users. Alow only for ADMIN user' })
   @Roles($Enums.Role.ADMIN)
   async findAll(): Promise<ResponseUserDto[]> {
     try {
@@ -63,6 +65,9 @@ export class UserController {
     type: [ResponseUserDto],
     description: 'Return user base on JWT token',
   })
+  @ApiOperation({
+    description: 'Return your user information based on your JWT',
+  })
   @ApiNotFoundResponse({ description: 'User not found' })
   @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS, $Enums.Role.USER)
   async findMyself(@AuthUser() user: any) {
@@ -80,6 +85,10 @@ export class UserController {
     type: [ResponseUserDto],
     description: 'Return user and his subordinates base on JWT token',
   })
+  @ApiOperation({
+    description:
+      'Return your user information and your subordinates based on your JWT',
+  })
   @ApiNotFoundResponse({ description: 'User not found' })
   @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS)
   async findSubordinates(@AuthUser() user: any) {
@@ -96,6 +105,7 @@ export class UserController {
   @ApiConflictResponse({
     description: 'Admin can be subordinate only by admin',
   })
+  @ApiOperation({ description: 'Update user by id. Alow only for ADMIN user' })
   @Roles($Enums.Role.ADMIN)
   async update(
     @Param('id') id: string,
@@ -128,6 +138,9 @@ export class UserController {
     description:
       "You can't set role USER because User with id ${id} have subordinates",
   })
+  @ApiOperation({
+    description: 'Change role for user. Alow only for ADMIN user',
+  })
   async changeRole(@Param('id') id: string, @Body() body: changeRoleDto) {
     return await this.userService.changeRole(+id, body.role);
   }
@@ -141,6 +154,9 @@ export class UserController {
   @ApiBadRequestResponse({ description: "User id and boss id can't be equels" })
   @ApiConflictResponse({
     description: 'Admin can be subordinate only by admin',
+  })
+  @ApiOperation({
+    description: 'Change boss for user. Alow only for ADMIN and BOSS users',
   })
   @Roles($Enums.Role.ADMIN, $Enums.Role.BOSS)
   async changeBoss(
